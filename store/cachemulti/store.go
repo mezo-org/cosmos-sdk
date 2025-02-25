@@ -167,3 +167,38 @@ func (cms Store) GetKVStore(key types.StoreKey) types.KVStore {
 	}
 	return store.(types.KVStore)
 }
+
+//----------------------------------------
+// fork only
+
+// Clone a method a added to deep clone the state of the Store
+func (cms Store) Clone() types.CacheMultiStore {
+
+	// her based on the following documentation from CacheWrap:
+	// ---
+	// CacheWrap is the most appropriate interface for store ephemeral branching and cache.
+	// For example, IAVLStore.CacheWrap() returns a CacheKVStore. CacheWrap should not return
+	// a Committer, since Commit ephemeral store make no sense. It can return KVStore,
+	// HeapStore, SpaceStore, etc.
+	// ---
+	// We can assument that any of the types behind CacheWrap will implement types.CacheKVStore
+	// because of this, we implement the Clone Method on the CacheKVStore
+	// Which implement both Store and CacheWrapper
+	stores := make(map[types.StoreKey]types.CacheWrap, len(cms.stores))
+	for k, v := range cms.stores {
+		stores[k.Clone()] = v.(types.CacheKVStore).Clone()
+	}
+
+	keys := make(map[string]types.StoreKey, len(cms.stores))
+	for k, v := range cms.keys {
+		keys[k] = v.Clone()
+	}
+
+	return Store{
+		db:           cms.db.Clone(),
+		stores:       stores,
+		keys:         keys,
+		traceWriter:  cms.traceWriter,
+		traceContext: cms.traceContext,
+	}
+}

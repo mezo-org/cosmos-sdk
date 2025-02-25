@@ -169,6 +169,9 @@ type MultiStore interface {
 type CacheMultiStore interface {
 	MultiStore
 	Write() // Writes operations to underlying KVStore
+
+	// Fork only
+	Clone() CacheMultiStore
 }
 
 // CommitMultiStore is an interface for a MultiStore without cache capabilities.
@@ -290,6 +293,10 @@ type CacheKVStore interface {
 
 	// Write writes operations to underlying KVStore
 	Write()
+
+	// Fork only
+	// Clone the inner cache
+	Clone() CacheKVStore
 }
 
 // CommitKVStore is an interface for MultiStore.
@@ -382,6 +389,8 @@ func (st StoreType) String() string {
 type StoreKey interface {
 	Name() string
 	String() string
+	// Fork only
+	Clone() StoreKey
 }
 
 // CapabilityKey represent the Cosmos SDK keys for object-capability
@@ -545,4 +554,19 @@ func NewMemoryStoreKeys(names ...string) map[string]*MemoryStoreKey {
 	}
 
 	return keys
+}
+
+//----------------------------------------
+// fork only
+
+func (key *MemoryStoreKey) Clone() StoreKey {
+	return &MemoryStoreKey{name: key.name}
+}
+
+func (key *TransientStoreKey) Clone() StoreKey {
+	return &TransientStoreKey{key.name}
+}
+
+func (key *KVStoreKey) Clone() StoreKey {
+	return &KVStoreKey{key.name}
 }
