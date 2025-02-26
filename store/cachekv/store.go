@@ -404,7 +404,7 @@ func (store *Store) setCacheValue(key, value []byte, dirty bool) {
 //----------------------------------------
 // fork only
 
-// Clone, a method use to deep clone the state of the Store
+// Clone, a method used to deep clone the state of the Store
 func (store *Store) Clone() types.CacheKVStore {
 	store.mtx.Lock()
 	defer store.mtx.Unlock()
