@@ -186,7 +186,11 @@ func (cms Store) Clone() types.CacheMultiStore {
 	// which implement both Store and CacheWrapper
 	stores := make(map[types.StoreKey]types.CacheWrap, len(cms.stores))
 	for k, v := range cms.stores {
-		stores[k.Clone()] = v.(types.CacheKVStore).Clone()
+		kvStore, ok := v.(types.CacheKVStore)
+		if !ok {
+			panic("unable to cast types.CacheWrap to types.CacheKVStore, unexpected type stored behing types.CacheWrap")
+		}
+		stores[k.Clone()] = kvStore.Clone()
 	}
 
 	keys := make(map[string]types.StoreKey, len(cms.keys))
