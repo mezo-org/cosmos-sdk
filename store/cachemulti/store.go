@@ -191,16 +191,15 @@ func (cms Store) Clone() types.CacheMultiStore {
 		if !ok {
 			panic("unable to cast types.CacheWrap to types.CacheKVStore, unexpected type stored behind types.CacheWrap")
 		}
-		// we do not Clone k here, because the key use an interface
-		// the map is actually keyed on the address of the interface
-		// cloning would break behaviour
+		// We do not Clone `k` here, because the key uses an interface.
+		// The map is actually keyed on the address of the interface instance.
+		// Cloning it would break the behavior.
 		stores[k] = kvStore.Clone()
 	}
 
-	// here we can clone the map directly
-	//no need to iterate. the values are StoreKey
-	// which we actuall can't clone and need to
-	// use pointe base
+	// Here we can clone the map directly - no need to iterate. 
+	// The values are `StoreKey` which we actually can't clone
+	// and need to use pointer base.
 	keys := maps.Clone(cms.keys)
 
 	return Store{
