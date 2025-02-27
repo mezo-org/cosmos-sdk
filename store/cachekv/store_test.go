@@ -102,10 +102,6 @@ func TestClonedCacheKVStore(t *testing.T) {
 	require.Equal(t, valFmt(2), st.Get(keyFmt(1)))
 	require.Equal(t, valFmt(1), cloned.Get(keyFmt(1)))
 
-	// // make a new one, check it
-	// st = cachekv.NewStore(mem)
-	// require.Equal(t, valFmt(2), st.Get(keyFmt(1)))
-
 	// make a new one and delete - should not be removed from mem
 	st.Delete(keyFmt(1))
 	require.Empty(t, st.Get(keyFmt(1)))
