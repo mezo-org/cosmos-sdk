@@ -188,7 +188,7 @@ func (cms Store) Clone() types.CacheMultiStore {
 	for k, v := range cms.stores {
 		kvStore, ok := v.(types.CacheKVStore)
 		if !ok {
-			panic("unable to cast types.CacheWrap to types.CacheKVStore, unexpected type stored behing types.CacheWrap")
+			panic("unable to cast types.CacheWrap to types.CacheKVStore, unexpected type stored behind types.CacheWrap")
 		}
 		stores[k.Clone()] = kvStore.Clone()
 	}
