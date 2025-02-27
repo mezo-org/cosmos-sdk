@@ -389,8 +389,6 @@ func (st StoreType) String() string {
 type StoreKey interface {
 	Name() string
 	String() string
-	// Fork only
-	Clone() StoreKey
 }
 
 // CapabilityKey represent the Cosmos SDK keys for object-capability
@@ -554,19 +552,4 @@ func NewMemoryStoreKeys(names ...string) map[string]*MemoryStoreKey {
 	}
 
 	return keys
-}
-
-//----------------------------------------
-// fork only
-
-func (key *MemoryStoreKey) Clone() StoreKey {
-	return &MemoryStoreKey{name: key.name}
-}
-
-func (key *TransientStoreKey) Clone() StoreKey {
-	return &TransientStoreKey{key.name}
-}
-
-func (key *KVStoreKey) Clone() StoreKey {
-	return &KVStoreKey{key.name}
 }

@@ -3,6 +3,7 @@ package cachemulti
 import (
 	"fmt"
 	"io"
+	"maps"
 
 	corestore "cosmossdk.io/core/store"
 	"cosmossdk.io/store/cachekv"
@@ -190,13 +191,17 @@ func (cms Store) Clone() types.CacheMultiStore {
 		if !ok {
 			panic("unable to cast types.CacheWrap to types.CacheKVStore, unexpected type stored behind types.CacheWrap")
 		}
-		stores[k.Clone()] = kvStore.Clone()
+		// we do not Clone k here, because the key use an interface
+		// the map is actually keyed on the address of the interface
+		// cloning would break behaviour
+		stores[k] = kvStore.Clone()
 	}
 
-	keys := make(map[string]types.StoreKey, len(cms.keys))
-	for k, v := range cms.keys {
-		keys[k] = v.Clone()
-	}
+	// here we can clone the map directly
+	//no need to iterate. the values are StoreKey
+	// which we actuall can't clone and need to
+	// use pointe base
+	keys := maps.Clone(cms.keys)
 
 	return Store{
 		db:           cms.db.Clone(),
