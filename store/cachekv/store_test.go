@@ -65,6 +65,62 @@ func TestCacheKVStore(t *testing.T) {
 	require.Empty(t, mem.Get(keyFmt(1)), "Expected `key1` to be empty")
 }
 
+func TestClonedCacheKVStore(t *testing.T) {
+	mem := dbadapter.Store{DB: coretesting.NewMemDB()}
+	st := cachekv.NewStore(mem)
+
+	// do some initial setup to the store
+
+	require.Empty(t, st.Get(keyFmt(1)), "Expected `key1` to be empty")
+
+	// put something in mem and in cache
+	mem.Set(keyFmt(1), valFmt(1))
+	st.Set(keyFmt(1), valFmt(1))
+	require.Equal(t, valFmt(1), st.Get(keyFmt(1)))
+
+	cloned := st.Clone()
+	require.Equal(t, valFmt(1), cloned.Get(keyFmt(1)))
+
+	// update it in cache, shouldn't change mem neither the cloned
+
+	st.Set(keyFmt(1), valFmt(2))
+	require.Equal(t, valFmt(2), st.Get(keyFmt(1)))
+	require.Equal(t, valFmt(1), mem.Get(keyFmt(1)))
+	require.Equal(t, valFmt(1), cloned.Get(keyFmt(1)))
+
+	// write it. should change parent but not the
+	// clone
+	st.Write()
+	require.Equal(t, valFmt(2), mem.Get(keyFmt(1)))
+	require.Equal(t, valFmt(2), st.Get(keyFmt(1)))
+	require.Equal(t, valFmt(1), cloned.Get(keyFmt(1)))
+
+	// more writes and checks
+	st.Write()
+	st.Write()
+	require.Equal(t, valFmt(2), mem.Get(keyFmt(1)))
+	require.Equal(t, valFmt(2), st.Get(keyFmt(1)))
+	require.Equal(t, valFmt(1), cloned.Get(keyFmt(1)))
+
+	// make a new one and delete - should not be removed from mem
+	st.Delete(keyFmt(1))
+	require.Empty(t, st.Get(keyFmt(1)))
+	require.Equal(t, mem.Get(keyFmt(1)), valFmt(2))
+
+	// Write. should now be removed from both
+	st.Write()
+	require.Empty(t, st.Get(keyFmt(1)), "Expected `key1` to be empty")
+	require.Empty(t, mem.Get(keyFmt(1)), "Expected `key1` to be empty")
+	require.Equal(t, valFmt(1), cloned.Get(keyFmt(1)))
+
+	// write the clone. should change parent but not the
+	// original, the deleted key is restored
+	cloned.Write()
+	require.Equal(t, valFmt(1), mem.Get(keyFmt(1)))
+	require.Equal(t, valFmt(1), cloned.Get(keyFmt(1)))
+	require.Empty(t, st.Get(keyFmt(1)), "Expected `key1` to be empty")
+}
+
 func TestCacheKVStoreNoNilSet(t *testing.T) {
 	mem := dbadapter.Store{DB: coretesting.NewMemDB()}
 	st := cachekv.NewStore(mem)

@@ -3,6 +3,7 @@ package cachekv
 import (
 	"bytes"
 	"io"
+	"maps"
 	"sort"
 	"sync"
 
@@ -397,5 +398,30 @@ func (store *Store) setCacheValue(key, value []byte, dirty bool) {
 	}
 	if dirty {
 		store.unsortedCache[keyStr] = struct{}{}
+	}
+}
+
+//----------------------------------------
+// fork only
+
+// Clone, a method used to deep clone the state of the Store
+func (store *Store) Clone() types.CacheKVStore {
+	store.mtx.Lock()
+	defer store.mtx.Unlock()
+
+	cache := make(map[string]*cValue, len(store.cache))
+	for k, v := range store.cache {
+		val := *v
+		cache[k] = &val
+	}
+
+	unsortedCache := maps.Clone(store.unsortedCache)
+
+	return &Store{
+		cache:         cache,
+		unsortedCache: unsortedCache,
+		sortedCache:   store.sortedCache.Copy(),
+		// even in a clone the parent should stay the same
+		parent: store.parent,
 	}
 }
