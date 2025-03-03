@@ -3,6 +3,7 @@ package cachemulti
 import (
 	"fmt"
 	"io"
+	"maps"
 
 	dbm "github.com/cosmos/cosmos-db"
 
@@ -167,4 +168,46 @@ func (cms Store) GetKVStore(key types.StoreKey) types.KVStore {
 		panic(fmt.Sprintf("kv store with key %v has not been registered in stores", key))
 	}
 	return store.(types.KVStore)
+}
+
+//----------------------------------------
+// fork only
+
+// Clone is a method added to deep clone the state of the Store.
+func (cms Store) Clone() types.CacheMultiStore {
+
+	// Based on the following documentation from CacheWrap:
+	// ---
+	// CacheWrap is the most appropriate interface for store ephemeral branching and cache.
+	// For example, IAVLStore.CacheWrap() returns a CacheKVStore. CacheWrap should not return
+	// a Committer, since Commit ephemeral store make no sense. It can return KVStore,
+	// HeapStore, SpaceStore, etc.
+	// ---
+	// We can assume that any of the types behind CacheWrap will implement types.CacheKVStore
+	// because of this, we implement the Clone Method on the CacheKVStore
+	// which implement both Store and CacheWrapper
+	stores := make(map[types.StoreKey]types.CacheWrap, len(cms.stores))
+	for k, v := range cms.stores {
+		kvStore, ok := v.(types.CacheKVStore)
+		if !ok {
+			panic("unable to cast types.CacheWrap to types.CacheKVStore, unexpected type stored behind types.CacheWrap")
+		}
+		// We do not Clone `k` here, because the key uses an interface.
+		// The map is actually keyed on the address of the interface instance.
+		// Cloning it would break the behavior.
+		stores[k] = kvStore.Clone()
+	}
+
+	// Here we can clone the map directly - no need to iterate.
+	// The values are `StoreKey` which we actually can't clone
+	// and need to use pointer base.
+	keys := maps.Clone(cms.keys)
+
+	return Store{
+		db:           cms.db.Clone(),
+		stores:       stores,
+		keys:         keys,
+		traceWriter:  cms.traceWriter,
+		traceContext: cms.traceContext,
+	}
 }
